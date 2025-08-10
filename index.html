@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Cookie Clicker Clone</title>
+<style>
+  body {
+    text-align: center;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #cce7ff url('chipahoy.png') no-repeat center top;
+    background-size: cover;
+  }
+
+  h1 { margin-top: 20px; }
+  #score { font-size: 20px; margin: 5px 0; }
+  #stats {
+    font-size: 16px;
+    color: #444;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+  }
+  #cookie {
+    width: 400px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  #cookie:active { transform: scale(0.97); }
+  .mini-cookie {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+    animation: floatUp 1s forwards;
+    z-index: 999;
+  }
+  @keyframes floatUp { to { transform: translateY(-50px); opacity: 0; } }
+  #shopBtn {
+    margin-top: 20px;
+    padding: 15px 30px;
+    background: #e4000f;
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  #shopPanel {
+    position: fixed;
+    left: 0; bottom: 0;
+    width: 100%;
+    max-height: 80vh;
+    background: linear-gradient(white, rgb(214, 214, 214));
+    border-top: 3px solid navy;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.25);
+    transform: translateY(100%);
+    transition: transform 0.4s ease;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  #shopPanel.open { transform: translateY(0); }
+  #shopTopBar {
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+  #shopCloseBtn, #toggleUpgradesBtn {
+    background: #ea303d; border: none; color: white;
+    font-size: 14px; font-weight: bold; cursor: pointer;
+    width: 100px; height: 32px; border-radius: 5px;
+  }
+  #items, #upgrades { display: none; }
+  #items.active, #upgrades.active { display: block; }
+  .shop-item, .upgrade-item {
+    display: flex; align-items: center; background: white;
+    border: 2px solid rgb(199, 199, 199);
+    border-radius: 12px;
+    margin: 10px 0;
+    padding: 10px;
+  }
+  .shop-img, .upgrade-img {
+    width: 50px; height: 50px; margin-right: 15px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .shop-info, .upgrade-info { flex: 1; text-align: left; }
+  .shop-title, .upgrade-title { font-weight: bold; font-size: 18px; }
+  /* Smaller description text underneath titles for upgrades */
+  .upgrade-desc {
+    font-size: 14px;
+    color: #555;
+    margin-top: 2px;
+  }
+  button.buy-btn {
+    background: #ea303d;
+    border: none;
+    padding: 8px 14px;
+    font-weight: bold;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+  }
+  button.buy-btn:disabled {
+    background: grey;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<h1>Cookie Clicker</h1>
+<p id="score">Cookies: 0</p>
+<div id="stats">
+  <span id="cps">Per Second: 0</span>
+  <span id="cpm">Clicks/Minute: 0</span>
+</div>
+
+<img src="largecookie.png" id="cookie" alt="Cookie" />
+<br />
+<button id="shopBtn">Shop</button>
+
+<div id="shopPanel">
+  <div id="shopTopBar">
+    <button id="toggleUpgradesBtn">Upgrades</button>
+    <button id="shopCloseBtn">Exit</button>
+  </div>
+  <h2 id="panelTitle">Buildings</h2>
+
+  <!-- Building items -->
+  <div id="items" class="active">
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/a/a0/Cursor_64px.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Cursor (<span id="cursorCount">0</span>)</span></div>
+      <button id="buyCursor" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/5/55/Grandmas.gif" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Grandma (<span id="grandmaCount">0</span>)</span></div>
+      <button id="buyGrandma" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/a/a7/Farm.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Farm (<span id="farmCount">0</span>)</span></div>
+      <button id="buyFarm" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/9/99/Mine_new.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Mine (<span id="mineCount">0</span>)</span></div>
+      <button id="buyMine" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/a/ae/Bank.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Bank (<span id="bankCount">0</span>)</span></div>
+      <button id="buyBank" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/4/49/Temple.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Temple (<span id="templeCount">0</span>)</span></div>
+      <button id="buyTemple" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/2/22/Wizardtower.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Wizard Tower (<span id="wizardTowerCount">0</span>)</span></div>
+      <button id="buyWizardTower" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/f/fb/Shipment_new.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Shipment (<span id="shipmentCount">0</span>)</span></div>
+      <button id="buyShipment" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/7/73/Portal_new.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Portal (<span id="portalCount">0</span>)</span></div>
+      <button id="buyPortal" class="buy-btn"></button>
+    </div>
+    <div class="shop-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/3/33/Timemachine_new.png" class="shop-img" />
+      <div class="shop-info"><span class="shop-title">Time Machine (<span id="timeMachineCount">0</span>)</span></div>
+      <button id="buyTimeMachine" class="buy-btn"></button>
+    </div>
+  </div>
+
+  <!-- Upgrades -->
+  <div id="upgrades">
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/d/d2/Plain_cursor.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Reinforced Index Finger</span>
+        <span class="upgrade-desc">Cursor power x2</span>
+      </div>
+      <button id="buyReinforcedIndex" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/0/01/Berrylium_cursor.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Carpal Tunnel Prevention Cream</span>
+        <span class="upgrade-desc">Cursor & click x2</span>
+      </div>
+      <button id="buyCarpalTunnel" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/2/2e/Blueberrylium_cursor.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Ambidextrous</span>
+        <span class="upgrade-desc">Cursor & click x2</span>
+      </div>
+      <button id="buyAmbidextrous" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/a/a9/Chalcedhoney_cursor.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Thousand Fingers</span>
+        <span class="upgrade-desc">Cursor gains +0.1 CPS per non-cursor building owned</span>
+      </div>
+      <button id="buyThousandFingers" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/0/0c/Buttergold_cursor.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Million Fingers</span>
+        <span class="upgrade-desc">Thousand Fingers gain ×5</span>
+      </div>
+      <button id="buyMillionFingers" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/f/f2/Sugarmuck_cursor.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Billion Fingers</span>
+        <span class="upgrade-desc">Thousand Fingers gain ×10</span>
+      </div>
+      <button id="buyBillionFingers" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/5/50/Grandma_icon.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Grandma's Recipe Book</span>
+        <span class="upgrade-desc">Grandmas are 50% more efficient</span>
+      </div>
+      <button id="buyGrandmasRecipe" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/a/a7/Farm.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Cookie Farms Expansion</span>
+        <span class="upgrade-desc">Farms are twice as efficient</span>
+      </div>
+      <button id="buyCookieFarmExp" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/9/99/Mine_new.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Mine Optimization</span>
+        <span class="upgrade-desc">Mines are twice as efficient</span>
+      </div>
+      <button id="buyMineOptimization" class="buy-btn"></button>
+    </div>
+    <div class="upgrade-item">
+      <img src="https://static.wikia.nocookie.net/cookieclicker/images/c/c3/Kitten_helpers.png" class="upgrade-img" />
+      <div class="upgrade-info">
+        <span class="upgrade-title">Kitten Helpers</span>
+        <span class="upgrade-desc">Global CPS increased by 10%</span>
+      </div>
+      <button id="buyKittenHelpers" class="buy-btn"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Game State & Persistent Storage
+let cookies = parseFloat(localStorage.getItem('cookies')) || 0;
+let clicksThisMinute = 0;
+let clicksPerMinute = 0;
+let buildings = JSON.parse(localStorage.getItem('buildings')) || {
+  cursor: { count: 0, baseCost: 15, cost: 15, cps: 0.1 },
+  grandma: { count: 0, baseCost: 100, cost: 100, cps: 1 },
+  farm: { count: 0, baseCost: 1100, cost: 1100, cps: 8 },
+  mine: { count: 0, baseCost: 12000, cost: 12000, cps: 47 },
+  bank: { count: 0, baseCost: 1300000, cost: 1300000, cps: 1400 },
+  temple: { count: 0, baseCost: 20000000, cost: 20000000, cps: 7800 },
+  wizardTower: { count: 0, baseCost: 330000000, cost: 330000000, cps: 44000 },
+  shipment: { count: 0, baseCost: 5100000000, cost: 5100000000, cps: 260000 },
+  portal: { count: 0, baseCost: 1000000000000, cost: 1000000000000, cps: 10000000 },
+  timeMachine: { count: 0, baseCost: 14000000000000, cost: 14000000000000, cps: 65000000 }
+};
+let upgrades = JSON.parse(localStorage.getItem('upgrades')) || {
+  reinforcedIndex: false, carpalTunnel: false, ambidextrous: false,
+  thousandFingers: false, millionFingers: false, billionFingers: false,
+  grandmasRecipe: false, cookieFarmExp: false, mineOptimization: false,
+  kittenHelpers: false
+};
+
+const upgradeData = {
+  reinforcedIndex: { cost: 100 },
+  carpalTunnel: { cost: 500 },
+  ambidextrous: { cost: 10000 },
+  thousandFingers: { cost: 100000 },
+  millionFingers: { cost: 10000000 },
+  billionFingers: { cost: 100000000 },
+  grandmasRecipe: { cost: 12500 },
+  cookieFarmExp: { cost: 150000 },
+  mineOptimization: { cost: 1000000 },
+  kittenHelpers: { cost: 9000000 }
+};
+
+// Helper functions
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function formatNumber(num) {
+  if (num >= 1000000) {
+    let m = num / 1000000;
+    return (m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)) + "M";
+  }
+  return Math.floor(num).toLocaleString();
+}
+
+// Calculate CPS including upgrades
+function calcCPS() {
+  let cps = 0;
+  for (const [name, b] of Object.entries(buildings)) {
+    let base = b.count * b.cps;
+    if (name === 'cursor') {
+      if (upgrades.reinforcedIndex) base *= 2;
+      if (upgrades.carpalTunnel) base *= 2;
+      if (upgrades.ambidextrous) base *= 2;
+      let bonus = 0;
+      if (upgrades.thousandFingers) {
+        let others = Object.entries(buildings).filter(([bn]) => bn !== 'cursor').reduce((sum, [, bb]) => sum + bb.count, 0);
+        bonus = 0.1 * others;
+        if (upgrades.millionFingers) bonus *= 5;
+        if (upgrades.billionFingers) bonus *= 10;
+      }
+      base += bonus;
+    }
+    if (name === 'grandma' && upgrades.grandmasRecipe) base *= 1.5;
+    if (name === 'farm' && upgrades.cookieFarmExp) base *= 2;
+    if (name === 'mine' && upgrades.mineOptimization) base *= 2;
+    cps += base;
+  }
+  if (upgrades.kittenHelpers) cps *= 1.1;
+  return cps;
+}
+
+// Calculate click power including upgrades
+function calcClickPower() {
+  let power = 1;
+  if (upgrades.reinforcedIndex) power *= 2;
+  if (upgrades.carpalTunnel) power *= 2;
+  if (upgrades.ambidextrous) power *= 2;
+  return power;
+}
+
+// Update UI elements
+function updateDisplay() {
+  document.getElementById('score').textContent = `Cookies: ${formatNumber(cookies)}`;
+  document.getElementById('cps').textContent = `Per Second: ${formatNumber(calcCPS())}`;
+  document.getElementById('cpm').textContent = `Clicks/Minute: ${formatNumber(clicksPerMinute)}`;
+
+  for (const n in buildings) {
+    const cap = capitalize(n);
+    const countSpan = document.getElementById(n + 'Count');
+    if (countSpan) countSpan.textContent = buildings[n].count;
+    const btn = document.getElementById('buy' + cap);
+    if (btn) {
+      btn.textContent = `Buy (${formatNumber(buildings[n].cost)})`;
+      btn.disabled = cookies < buildings[n].cost;
+    }
+  }
+  for (const [k, purchased] of Object.entries(upgrades)) {
+    const btn = document.getElementById('buy' + capitalize(k));
+    if (btn) {
+      btn.disabled = purchased || cookies < upgradeData[k].cost;
+      btn.textContent = purchased ? "Purchased" : `Buy (${formatNumber(upgradeData[k].cost)})`;
+    }
+  }
+}
+
+// Buying actions
+function buyBuilding(name) {
+  const b = buildings[name];
+  if (cookies >= b.cost) {
+    cookies -= b.cost;
+    b.count++;
+    b.cost = Math.floor(b.baseCost * Math.pow(1.15, b.count));
+    saveGame();
+    updateDisplay();
+  }
+}
+function buyUpgrade(key) {
+  if (upgrades[key]) return;
+  const cost = upgradeData[key].cost;
+  if (cookies >= cost) {
+    cookies -= cost;
+    upgrades[key] = true;
+    saveGame();
+    updateDisplay();
+  }
+}
+
+// Cookie click handling and animation
+document.getElementById('cookie').addEventListener('click', e => {
+  cookies += calcClickPower();
+  clicksThisMinute++;
+  clicksPerMinute = clicksThisMinute;
+  spawnMiniCookie(e);
+  updateDisplay();
+});
+function spawnMiniCookie(e) {
+  const img = document.createElement('img');
+  img.src = "largecookie.png";
+  img.className = 'mini-cookie';
+  img.style.left = `${e.clientX - 15}px`;
+  img.style.top = `${e.clientY - 15}px`;
+  document.body.appendChild(img);
+  setTimeout(() => img.remove(), 1000);
+}
+
+// Shop panel controls and toggling
+const shopPanel = document.getElementById('shopPanel');
+document.getElementById('shopBtn').onclick = () => shopPanel.classList.toggle('open');
+document.getElementById('shopCloseBtn').onclick = () => shopPanel.classList.remove('open');
+
+const toggleUpBtn = document.getElementById('toggleUpgradesBtn');
+const panelTitle = document.getElementById('panelTitle');
+const itemsDiv = document.getElementById('items');
+const upgradesDiv = document.getElementById('upgrades');
+let showingUp = false;
+toggleUpBtn.onclick = () => {
+  showingUp = !showingUp;
+  if (showingUp) {
+    itemsDiv.classList.remove('active');
+    upgradesDiv.classList.add('active');
+    toggleUpBtn.textContent = 'Buildings';
+    panelTitle.textContent = 'Upgrades';
+  } else {
+    upgradesDiv.classList.remove('active');
+    itemsDiv.classList.add('active');
+    toggleUpBtn.textContent = 'Upgrades';
+    panelTitle.textContent = 'Buildings';
+  }
+};
+
+// Hook buy buttons
+for (const n in buildings) {
+  const btn = document.getElementById('buy' + capitalize(n));
+  if (btn) btn.onclick = () => buyBuilding(n);
+}
+for (const k in upgradeData) {
+  const btn = document.getElementById('buy' + capitalize(k));
+  if (btn) btn.onclick = () => buyUpgrade(k);
+}
+
+// Save and load
+function saveGame() {
+  localStorage.setItem('cookies', cookies);
+  localStorage.setItem('buildings', JSON.stringify(buildings));
+  localStorage.setItem('upgrades', JSON.stringify(upgrades));
+}
+
+// Game loops
+setInterval(() => { cookies += calcCPS() / 10; updateDisplay(); }, 100);
+setInterval(saveGame, 5000);
+setInterval(() => { clicksPerMinute = clicksThisMinute; clicksThisMinute = 0; updateDisplay(); }, 60000);
+
+// Initialize display on load
+updateDisplay();
+</script>
+</body>
+</html>
